@@ -1,0 +1,95 @@
+
+spring:
+  application:
+    name: file-uploader-service
+
+
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5433/filedb
+    username: postgres
+    password: postgres
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-life-time: 1800000
+      max-acquire-time: 5000
+      max-create-connection-time: 3000
+
+  flyway:
+    url: jdbc:postgresql://localhost:5433/filedb
+    user: postgres
+    password: postgres
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 5
+          min-idle: 2
+
+server:
+  port: 8080
+  netty:
+    connection-timeout: 10000
+    idle-timeout: 60000
+
+application:
+  minio:
+    endpoint: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    region: us-east-1
+    bucket-name: user-files
+    path-style-access-enabled: true
+    max-file-size: 104857600
+    request-timeout: 30000
+
+  idempotency:
+    redis-ttl: 86400
+    operation-timeout: 300000
+
+  security:
+    test-user:
+      username: test
+      password: test
+      user-id: 1
+
+  cleanup:
+    stale-operation-timeout-minutes: 1
+    old-records-retention-days: 1
+
+
+logging:
+  level:
+    kz.lab.fileuploaderservice: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.r2dbc: DEBUG
+    reactor.netty: INFO
+    org.flywaydb: INFO
+    software.amazon.awssdk: WARN
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: always
+
+  health:
+    redis:
+      enabled: true
+
+
+

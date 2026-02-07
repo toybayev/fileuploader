@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: fileuploader-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: filedb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d filedb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fileuploader-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: fileuploader-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - fileuploader-network
+
+
+  minio:
+    image: minio/minio:latest
+    container_name: fileuploader-minio
+    ports:
+      # API endpoint для приложения
+      - "9000:9000"
+      # Web Console UI
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    # Запуск
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - fileuploader-network
+
+# ===
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+
+# =
+networks:
+  fileuploader-network:
+    driver: bridge
